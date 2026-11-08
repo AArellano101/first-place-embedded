@@ -1,0 +1,4 @@
+# Alternate compilation fixture: demo timings, active buzzer, no mock console.
+CONFIG_THIRD_PLACE_DEMO=y
+CONFIG_THIRD_PLACE_ACTIVE_BUZZER=y
+# CONFIG_THIRD_PLACE_LOCAL_MOCK is not set
