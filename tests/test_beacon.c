@@ -40,8 +40,8 @@ static void test_availability_and_invites(void)
     beacon_press(&b, BUTTON_STATUS, 6);
     assert(b.availability == AVAIL_GREEN);
     beacon_press(&b, BUTTON_SKIP, 7);
-    assert(b.availability == AVAIL_GREEN && events[EVENT_SKIP] == 0);
-    assert(strcmp(b.feedback, "No pending invite") == 0 && !beacon_alarm_on(&b, 7));
+    assert(b.availability == AVAIL_RED && events[EVENT_SKIP] == 0);
+    assert(strcmp(b.feedback, "Skipped - now RED") == 0 && beacon_alarm_on(&b, 7));
 
     assert(beacon_receive_invitation(&b, "uuid-123", 8));
     beacon_press(&b, BUTTON_ACCEPT, 9);
@@ -54,8 +54,11 @@ static void test_availability_and_invites(void)
     int64_t deadline = b.deadline_ms;
     beacon_press(&b, BUTTON_SKIP, 13);
     assert(events[EVENT_SKIP] == 1 && strcmp(last_event.invitation_id, "skip-me") == 0);
-    assert(b.availability == AVAIL_GREEN && b.timer == TIMER_RUNNING && b.deadline_ms == deadline);
-    assert(!beacon_alarm_on(&b, 13) && !b.invitation_id[0]);
+    assert(b.availability == AVAIL_RED && b.timer == TIMER_IDLE);
+    assert(events[EVENT_TIMER_CANCEL] == 1);
+    assert(beacon_alarm_on(&b, 13) && !b.invitation_id[0]);
+    beacon_tick(&b, deadline + 1);
+    assert(events[EVENT_TIMER_EXPIRE] == 0);
 
     assert(beacon_receive_invitation(&b, "old", 14));
     assert(beacon_receive_invitation(&b, "replacement", 15));
@@ -135,6 +138,33 @@ static void test_timer_and_alarm(void)
     assert(b.timer == TIMER_IDLE && b.availability == AVAIL_RED && !beacon_alarm_on(&b, alarm + 10001));
 }
 
+static void test_skip_alert(void)
+{
+    beacon_t b = fresh();
+    beacon_press(&b, BUTTON_STATUS, 0);
+    beacon_press(&b, BUTTON_TIMER, 1);
+    beacon_tick(&b, b.deadline_ms);
+    int64_t now = b.deadline_ms + 50;
+    beacon_press(&b, BUTTON_SKIP, now);
+    assert(b.availability == AVAIL_RED && b.timer == TIMER_IDLE);
+    assert(events[EVENT_TIMER_EXPIRE] == 1 && events[EVENT_TIMER_CANCEL] == 0);
+    assert(events[EVENT_SKIP] == 0); // No fabricated invitation event.
+    unsigned rising_edges = 0, on_ms = 0;
+    bool previous = false;
+    for (int t = 0; t < 2000; t++) {
+        beacon_tick(&b, now + t);
+        bool on = beacon_alarm_on(&b, now + t);
+        if (on && !previous) rising_edges++;
+        if (on) on_ms++;
+        previous = on;
+    }
+    assert(rising_edges == 3 && on_ms == 600 && !previous);
+    beacon_press(&b, BUTTON_SKIP, now + 2100);
+    assert(beacon_alarm_on(&b, now + 2100));
+    beacon_press(&b, BUTTON_TIMER, now + 2150);
+    assert(b.timer == TIMER_RUNNING && !beacon_alarm_on(&b, now + 2150));
+}
+
 static void test_debounce(void)
 {
     debounce_t d = {0};
@@ -203,6 +233,7 @@ int main(void)
 {
     test_availability_and_invites();
     test_timer_and_alarm();
+    test_skip_alert();
     test_debounce();
     test_dial();
     test_screen();

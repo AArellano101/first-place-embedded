@@ -25,6 +25,7 @@ typedef struct {
     unsigned latched_s;
     int64_t deadline_ms;
     int64_t alarm_started_ms;
+    bool alarm_active;
     char invitation_id[INVITE_ID_MAX + 1];
     char feedback[22];
     int64_t feedback_until_ms;

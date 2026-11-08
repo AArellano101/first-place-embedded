@@ -8,8 +8,8 @@ Date: 2026-11-08 (UTC). Target: classic `esp32`, installed ESP-IDF **5.5.2**.
 | --- | --- |
 | Host C tests, production timing | PASS |
 | Host C tests, demo timing | PASS |
-| ESP32 production build: passive buzzer, local mock enabled | PASS; `build/meow.bin`, size `0x445d0`, 73% of app partition free |
-| ESP32 alternate build: demo timing, active buzzer, mock disabled | PASS; `build/validation/meow.bin`, size `0x35490`, 79% of app partition free |
+| ESP32 production build: passive buzzer, local mock enabled | PASS; `build/meow.bin` |
+| ESP32 alternate build: demo timing, active buzzer, mock disabled | PASS; `build/validation/meow.bin` |
 
 Both firmware builds completed linking, binary generation and partition-size checks.
 No compiler warnings or errors were reported. The main `sdkconfig` remains in
@@ -21,7 +21,9 @@ GCC, `-std=c11 -Wall -Wextra -Werror -pedantic`, then execute assertions in both
 duration configurations. Coverage includes state cycling, accept/skip invariants,
 exact invitation IDs, rejection of invalid IDs, clearing/replacement, no duplicate
 events, timer locking/cancellation/expiration, 64-bit deadlines, exact logical
-beep windows, acknowledgement mid-alert, button bounce and holds, dial clamping,
+beep windows, acknowledgement mid-alert, Skip returning RED/IDLE and buzzing
+with or without an invitation, Skip during expiration, no late expiration after
+Skip, restarting after Skip, button bounce and holds, dial clamping,
 smoothing/hysteresis, and UI countdown/feedback rendering.
 
 Reproduce the host checks with `python tests/run_tests.py`. Build production with

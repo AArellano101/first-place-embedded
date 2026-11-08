@@ -79,13 +79,25 @@ void beacon_press(beacon_t *b, button_t button, int64_t now)
         }
         break;
     case BUTTON_SKIP:
+        if (b->timer == TIMER_RUNNING) {
+            b->timer = TIMER_IDLE;
+            report(b, EVENT_TIMER_CANCEL);
+        }
+        b->timer = TIMER_IDLE;
+        if (b->availability != AVAIL_RED) {
+            b->availability = AVAIL_RED;
+            report(b, EVENT_AVAILABILITY);
+        }
         if (b->invitation_id[0]) {
             report(b, EVENT_SKIP);
             b->invitation_id[0] = '\0';
-            feedback(b, "Skipped locally", now);
-        } else feedback(b, "No pending invite", now);
+        }
+        b->alarm_started_ms = now;
+        b->alarm_active = true;
+        feedback(b, "Skipped - now RED", now);
         break;
     case BUTTON_TIMER:
+        b->alarm_active = false;
         if (b->timer == TIMER_IDLE) {
             b->latched_s = b->selected_s;
             b->deadline_ms = now + (int64_t)b->latched_s * 1000;
@@ -110,6 +122,7 @@ void beacon_tick(beacon_t *b, int64_t now)
     if (b->timer == TIMER_RUNNING && now >= b->deadline_ms) {
         b->timer = TIMER_EXPIRED;
         b->alarm_started_ms = now;
+        b->alarm_active = true;
         report(b, EVENT_TIMER_EXPIRE);
     }
 }
@@ -125,6 +138,6 @@ bool beacon_alarm_on(const beacon_t *b, int64_t now)
     int64_t elapsed = now - b->alarm_started_ms;
     const int period = BUZZER_ON_MS + BUZZER_GAP_MS;
     const int total = BUZZER_BEEPS * BUZZER_ON_MS + (BUZZER_BEEPS - 1) * BUZZER_GAP_MS;
-    return b->timer == TIMER_EXPIRED && elapsed >= 0 && elapsed < total &&
+    return b->alarm_active && elapsed >= 0 && elapsed < total &&
            elapsed % period < BUZZER_ON_MS;
 }

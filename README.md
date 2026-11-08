@@ -94,12 +94,15 @@ The dial controls duration, never LED brightness.
 - **Accept** changes YELLOW to GREEN. If an invitation is pending, it emits a local
   acceptance event containing the ID and clears it. With no pending invitation,
   no acceptance event is fabricated. It never starts the timer.
-- **Skip** clears/reports a pending invitation without changing availability or
-  timer. It never triggers an alarm. With no invitation, feedback says
-  `No pending invite`. An already-running expiration alert is independent of Skip.
+- **Skip** stops the timer and returns it to IDLE, switches availability to RED,
+  and plays the three-beep alert, even with no invitation. It also clears/reports
+  a pending invitation if present. The OLED briefly shows `Skipped - now RED`.
+  A running timer reports cancellation, not expiration. Each new Skip press
+  restarts the alert; holding the button does not repeat it.
 - **Timer** from IDLE latches the selected duration and starts. From RUNNING it
   cancels silently and returns to IDLE. From EXPIRED it acknowledges and silences
   any ongoing alert, returning to IDLE. A subsequent press starts another timer.
+  After Skip, Timer starts a new countdown and silences any remaining Skip beeps.
 
 Each button is debounced for 30 ms and produces one action per press, including
 when held. Simultaneous presses are handled in Accept, Skip, Status, Timer order.
@@ -234,7 +237,9 @@ Use demo mode for short tests, then check production endpoints as well.
 - [ ] Status: RED -> YELLOW -> GREEN -> RED, one change per press; hold/bounce do not repeat.
 - [ ] Accept from YELLOW: GREEN, timer remains unchanged; no invented acceptance event.
 - [ ] Inject invitation, Accept/Skip: correct ID reported once and pending flag cleared.
-- [ ] Skip with/without invitation: no new buzz, no availability or timer change.
+- [ ] Skip with/without invitation, from IDLE/RUNNING/EXPIRED: RED, timer IDLE,
+      one three-beep alert, and pending invitation cleared. No later expiration
+      of a skipped countdown. Timer can start again and silence the Skip alert.
 - [ ] Dial: stable full range 1-30 min (or 5-60 s), with no boundary flicker; calibrate endpoints.
 - [ ] Start: selected duration locks; rotating the dial does not change active countdown.
 - [ ] Cancel: countdown stops immediately after debounce, no alarm, timer IDLE.
@@ -242,7 +247,7 @@ Use demo mode for short tests, then check production endpoints as well.
       `Time's up.` remains; availability unchanged. Verify timing with a scope if available.
 - [ ] Buttons remain responsive during countdown and beeps; Timer silences and acknowledges;
       a separate next press starts again.
-- [ ] Availability changes and local invitation updates leave countdown unaffected.
+- [ ] Status/Accept availability changes and inbound invitation updates leave countdown unaffected.
 - [ ] Missing OLED at boot: LEDs/buttons/dial/timer/buzzer work; inspect offline log.
 - [ ] OLED disconnected or bus fault during operation: controls continue; reset to reconnect.
 - [ ] Reboot during a session: RED/IDLE, buzzer off, pending invitation cleared.
