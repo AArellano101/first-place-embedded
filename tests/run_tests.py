@@ -16,6 +16,10 @@ output.mkdir(parents=True, exist_ok=True)
 common = [compiler, "-std=c11", "-Wall", "-Wextra", "-Werror", "-pedantic", "-g",
           "-I", str(root / "main"), "-I", str(cjson)]
 suffix = ".exe" if os.name == "nt" else ""
+timer_test = output / ("test_timer" + suffix)
+subprocess.run(common + [str(root / "tests/test_timer.c"), str(root / "main/box_timer.c"),
+                         "-o", str(timer_test)], check=True)
+subprocess.run([str(timer_test)], check=True)
 for source, name in (("test_box.c", "test_box"), ("parse_probe.c", "parse_probe")):
     target = output / (name + suffix)
     command = common + [str(root / "tests" / source)]

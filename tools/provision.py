@@ -125,7 +125,17 @@ if __name__ == "__main__":
         main()
     except Exception as error:
         # Never interpolate arbitrary exception messages: they may contain secret input.
-        if type(error) in (ValueError, RuntimeError) and not isinstance(error, json.JSONDecodeError):
+        if isinstance(error, ModuleNotFoundError):
+            print("Missing Python dependency. Run with the same Python: python -m pip install -r tools/requirements.txt")
+        elif isinstance(error, json.JSONDecodeError):
+            print(f"Invalid config JSON at line {error.lineno}, column {error.colno}. No config contents were printed.")
+        elif isinstance(error, FileNotFoundError):
+            print("File not found. Check the --config path and run from the firmware project folder.")
+        elif isinstance(error, PermissionError):
+            print("Access denied. Check file permissions and close programs using the serial port.")
+        elif type(error).__module__.startswith("serial"):
+            print("Serial port unavailable. Close ESP-IDF/VS Code/Arduino serial monitors and other tools using the port, then retry. Verify --port in Device Manager.")
+        elif type(error) in (ValueError, RuntimeError):
             print("Error:", str(error))
         else:
             print("Operation failed. Check dependencies, local config, port access and device connection.")

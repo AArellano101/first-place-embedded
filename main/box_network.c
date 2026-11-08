@@ -25,9 +25,26 @@ typedef struct { box_response_t body; int64_t started_ms; bool aborted; } reques
 
 static void wifi_event(void *arg, esp_event_base_t base, int32_t id, void *data)
 {
-    (void)arg; (void)data;
-    if (base == WIFI_EVENT && id == WIFI_EVENT_STA_START) xEventGroupSetBits(wifi_events, WIFI_READY);
-    if (base == WIFI_EVENT && id == WIFI_EVENT_STA_DISCONNECTED) xEventGroupClearBits(wifi_events, WIFI_IP | WIFI_CONNECTING);
+    (void)arg;
+    if (base == WIFI_EVENT && id == WIFI_EVENT_STA_START) {
+        ESP_LOGI("box_net", "Wi-Fi started; connecting to saved network");
+        xEventGroupSetBits(wifi_events, WIFI_READY);
+    }
+    if (base == WIFI_EVENT && id == WIFI_EVENT_STA_CONNECTED)
+        ESP_LOGI("box_net", "Wi-Fi associated; waiting for IP address");
+    if (base == WIFI_EVENT && id == WIFI_EVENT_STA_DISCONNECTED) {
+        const wifi_event_sta_disconnected_t *event = data;
+        const char *hint = "connection lost or rejected";
+        if (event && event->reason == WIFI_REASON_NO_AP_FOUND)
+            hint = "network not found; check hotspot, 2.4 GHz and saved Wi-Fi name";
+        else if (event && (event->reason == WIFI_REASON_AUTH_FAIL ||
+                          event->reason == WIFI_REASON_HANDSHAKE_TIMEOUT ||
+                          event->reason == WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT))
+            hint = "authentication failed; check password and hotspot security";
+        ESP_LOGW("box_net", "Wi-Fi disconnected: reason=%u (%s); retrying",
+                 event ? (unsigned)event->reason : 0, hint);
+        xEventGroupClearBits(wifi_events, WIFI_IP | WIFI_CONNECTING);
+    }
     if (base == IP_EVENT && id == IP_EVENT_STA_GOT_IP) {
         xEventGroupClearBits(wifi_events, WIFI_CONNECTING);
         xEventGroupSetBits(wifi_events, WIFI_IP);
@@ -87,7 +104,10 @@ static void network_task(void *arg)
             if ((bits & WIFI_READY) && !(bits & WIFI_CONNECTING) && now >= next_connect) {
                 xEventGroupSetBits(wifi_events, WIFI_CONNECTING);
                 esp_err_t err = esp_wifi_connect();
-                if (err != ESP_OK) xEventGroupClearBits(wifi_events, WIFI_CONNECTING);
+                if (err != ESP_OK) {
+                    ESP_LOGW("box_net", "Wi-Fi connect could not start: %s", esp_err_to_name(err));
+                    xEventGroupClearBits(wifi_events, WIFI_CONNECTING);
+                }
                 if (connect_failures < 6) connect_failures++;
                 next_connect = now + box_retry_delay(connect_failures, esp_random());
             }

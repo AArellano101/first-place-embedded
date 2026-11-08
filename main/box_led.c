@@ -7,8 +7,8 @@ static unsigned previous[3] = {0};
 static bool status_previous;
 static bool usable_pin(int pin)
 {
-    // Exclude memory, strapping, serial console, input-only pins and old buzzer.
-    const int allowed[] = {4,14,18,19,21,22,23,25,26,27,32,33};
+    // Exclude memory, strapping, console and local timer pins.
+    const int allowed[] = {4,14,21,22,23,25,26,27,32,33};
     for (unsigned i = 0; i < sizeof(allowed) / sizeof(*allowed); i++) if (pin == allowed[i]) return true;
     return false;
 }
@@ -28,9 +28,6 @@ esp_err_t box_led_init(void)
     if (!usable_pin(BOX_OLED_SDA) || !usable_pin(BOX_OLED_SCL) || BOX_OLED_SDA == BOX_OLED_SCL ||
         BOX_LED_STATUS == BOX_OLED_SDA || BOX_LED_STATUS == BOX_OLED_SCL) return ESP_ERR_INVALID_ARG;
 #endif
-    // Silence the previously connected active-high buzzer; it has no role now.
-    ESP_ERROR_CHECK(gpio_set_level(BOX_INACTIVE_BUZZER_GPIO, 0));
-    ESP_ERROR_CHECK(gpio_set_direction(BOX_INACTIVE_BUZZER_GPIO, GPIO_MODE_OUTPUT));
     const ledc_timer_config_t timer = {.speed_mode = LEDC_LOW_SPEED_MODE,
         .timer_num = LEDC_TIMER_0, .duty_resolution = LEDC_TIMER_10_BIT,
         .freq_hz = 5000, .clk_cfg = LEDC_AUTO_CLK};

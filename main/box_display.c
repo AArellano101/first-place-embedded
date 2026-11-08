@@ -31,22 +31,30 @@ static void display_task(void *arg)
     for (;;) {
         if (xQueueReceive(screens, &current, portMAX_DELAY) != pdPASS) continue;
         if (!first && current.health == previous.health && current.light == previous.light &&
-            current.provisioned == previous.provisioned) continue;
+            current.provisioned == previous.provisioned && current.timer_running == previous.timer_running &&
+            current.timer_finished == previous.timer_finished && current.timer_seconds == previous.timer_seconds &&
+            current.selected_minutes == previous.selected_minutes) continue;
         oled_clear();
         oled_write_text(0, 0, "First Place");
         if (!current.provisioned) {
             oled_write_text(0, 2, "Setup required");
-            oled_write_text(0, 4, "Provision over USB");
+            oled_write_text(0, 3, "Provision over USB");
         } else if (current.health == BOX_FRESH) {
             char line[22];
             snprintf(line, sizeof(line), "Light: %s", box_light_name(current.light));
             oled_write_text(0, 2, line);
-            oled_write_text(0, 4, "Backend controlled");
         } else {
             oled_write_text(0, 2, current.health == BOX_CONFIG_FAULT ? "Configuration fault" :
                                     current.health == BOX_NO_SIGNAL ? "NO SIGNAL" : "Waiting for server");
-            oled_write_text(0, 4, "Conversation LEDs off");
         }
+        char timer_line[24];
+        snprintf(timer_line, sizeof(timer_line), "%s %02u:%02u",
+                 current.timer_finished ? "Done" : current.timer_running ? "Left" : "Timer",
+                 current.timer_seconds / 60, current.timer_seconds % 60);
+        oled_write_text(0, 4, timer_line);
+        snprintf(timer_line, sizeof(timer_line), "Set: %u min", current.selected_minutes);
+        oled_write_text(0, 6, timer_line);
+        oled_write_text(0, 7, current.timer_running ? "STOP: cancel" : "START: begin");
         if (oled_show() != ESP_OK) { ESP_LOGW("box_oled", "Display failed; lights continue"); vTaskDelete(NULL); return; }
         previous = current; first = false;
     }

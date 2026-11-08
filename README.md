@@ -2,8 +2,9 @@
 
 ESP-IDF **5.5.2**, target **esp32**, Freenove **ESP32-WROVER-CAM**.
 This implements the current backend contract: `off | green | yellow | red`.
-It replaces local invitations, buttons, potentiometer selection, timers and
-buzzer alerts. The previous standalone implementation is preserved under
+The API alone controls the lamps. A separate local countdown uses Start/Stop
+buttons and a potentiometer; it never changes the lamps or sends API commands.
+There is no buzzer. The previous standalone implementation is preserved under
 `legacy/standalone/` and is not compiled into this firmware.
 
 **The device is intentionally unprovisioned.** No real table UUID, API address,
@@ -24,10 +25,12 @@ not physical header positions.
 | Separate no-signal status LED | 23 | GPIO -> 330 ohm resistor -> LED anode; cathode -> GND; use a distinct color/label |
 | Optional OLED SDA | 21 | SDA, with I2C pull-up to 3.3 V |
 | Optional OLED SCL | 22 | SCL, with I2C pull-up to 3.3 V |
-| Previous buzzer control | 13 | Held LOW; buzzer is unused and can be disconnected |
+| Start button | 18 | Normally open pushbutton between GPIO and GND; internal pull-up |
+| Stop button | 19 | Normally open pushbutton between GPIO and GND; internal pull-up |
+| Potentiometer wiper | 34 | 10 kOhm pot: outer legs to 3V3 and GND, middle/wiper to GPIO34; never 5 V |
 
-Previous buttons on 18/19/32/33 and the potentiometer on 34 are unused. They can
-be disconnected. GPIO6-11 and 16-17 remain reserved for memory; GPIO1/3 remain
+Previous buttons on 32/33 and the buzzer on 13 are unused and can be disconnected.
+GPIO18/19/34 are reserved for local controls. GPIO6-11 and 16-17 remain reserved for memory; GPIO1/3 remain
 programming/logging; application outputs exclude strapping pins 0/2/5/12/15.
 
 This driver supports three **separate low-current LED channels** by default.
@@ -54,6 +57,18 @@ The OLED remains an **unconfirmed SSD1306 128x64 at 0x3C assumption**; the marki
 pull-ups go to 3.3 V. Change address/pins or disable it in menuconfig. Other
 controllers need the matching panel factory/IO setup in `oled.c`. Missing/faulty
 OLED hardware does not block the light task. Reboot after correcting its wiring.
+
+## Local countdown
+
+Turn the potentiometer to select 1–30 minutes. Start begins the selected duration;
+pressing Start while running does not restart it. Stop cancels and returns to the
+selected duration. The knob can set the next duration while the current countdown
+continues unchanged. At zero the OLED shows Done; Start begins another countdown.
+There is no timer-triggered lamp change or beep. The timer works even without the
+server, resets on reboot, and does not synchronize with the app's conversation timer.
+The OLED shows the light/connection status, countdown, selected minutes and button
+hint instead of “Backend controlled”. Buttons are debounced for 40 ms, and ADC1
+sampling runs separately from the light task so Wi-Fi and lamp freshness remain independent.
 
 ## Build and flash
 
