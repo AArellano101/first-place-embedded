@@ -1,30 +1,48 @@
-menu "Third Place beacon"
-    config THIRD_PLACE_DEMO
-        bool "Demo timer: 5-60 seconds (otherwise 1-30 minutes)"
+menu "First Place table box"
+    config BOX_ANALOG_RGB
+        bool "Analog RGB LED instead of three separate red/yellow/green lamps"
         default n
-    config THIRD_PLACE_ACTIVE_BUZZER
-        bool "Active buzzer: steady active-high control instead of 2 kHz PWM"
-        default n
-    config THIRD_PLACE_LOCAL_MOCK
-        bool "Enable local invitation mock commands on the USB serial console"
+    config BOX_LED_RED
+        int "Red lamp output GPIO (top)"
+        range 0 33
+        default 25
+    config BOX_LED_YELLOW
+        int "Yellow lamp output GPIO (middle), or BLUE channel for analog RGB"
+        range 0 33
+        default 26
+    config BOX_LED_GREEN
+        int "Green lamp output GPIO (bottom)"
+        range 0 33
+        default 27
+    config BOX_LED_STATUS
+        int "Separate no-signal LED GPIO (-1 disables it)"
+        range -1 33
+        default 23
+    config BOX_LED_ACTIVE_LOW
+        int "Lamp polarity: 0 active high, 1 active low"
+        range 0 1
+        default 0
+    config BOX_BRIGHTNESS
+        int "Maximum lamp brightness (percent)"
+        range 1 100
+        default 50
+    config BOX_PULSE_MS
+        int "Yellow breathing cycle (milliseconds)"
+        range 500 10000
+        default 2000
+    config BOX_OLED_ENABLED
+        bool "Optional SSD1306 status OLED"
         default y
-    config THIRD_PLACE_OLED_ADDRESS
-        hex "OLED 7-bit I2C address (SSD1306 assumed)"
+    config BOX_OLED_SDA
+        int "OLED SDA GPIO"
+        range 0 33
+        default 21
+    config BOX_OLED_SCL
+        int "OLED SCL GPIO"
+        range 0 33
+        default 22
+    config BOX_OLED_ADDRESS
+        hex "OLED address (SSD1306 128x64 assumed)"
         range 0x08 0x77
         default 0x3C
-    config THIRD_PLACE_ADC_LOW
-        int "Potentiometer low endpoint (raw ADC count)"
-        range 0 4094
-        default 100
-    config THIRD_PLACE_ADC_HIGH
-        int "Potentiometer high endpoint (raw ADC count)"
-        range 1 4095
-        default 3900
-    config THIRD_PLACE_ADC_HYSTERESIS
-        int "Duration boundary hysteresis (raw ADC counts)"
-        range 0 100
-        default 20
-    config THIRD_PLACE_ADC_LOG
-        bool "Log raw/filtered ADC readings once per second for endpoint calibration"
-        default n
 endmenu

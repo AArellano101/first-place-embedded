@@ -7,6 +7,9 @@
 .directory
 
 # Temporary files
+provisioning.local.json
+*.provision.local.json
+artifacts/
 *~
 *.swp
 *.swo

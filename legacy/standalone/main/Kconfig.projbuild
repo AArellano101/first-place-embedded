@@ -1,0 +1,30 @@
+menu "Third Place beacon"
+    config THIRD_PLACE_DEMO
+        bool "Demo timer: 5-60 seconds (otherwise 1-30 minutes)"
+        default n
+    config THIRD_PLACE_ACTIVE_BUZZER
+        bool "Active buzzer: steady active-high control instead of 2 kHz PWM"
+        default n
+    config THIRD_PLACE_LOCAL_MOCK
+        bool "Enable local invitation mock commands on the USB serial console"
+        default y
+    config THIRD_PLACE_OLED_ADDRESS
+        hex "OLED 7-bit I2C address (SSD1306 assumed)"
+        range 0x08 0x77
+        default 0x3C
+    config THIRD_PLACE_ADC_LOW
+        int "Potentiometer low endpoint (raw ADC count)"
+        range 0 4094
+        default 100
+    config THIRD_PLACE_ADC_HIGH
+        int "Potentiometer high endpoint (raw ADC count)"
+        range 1 4095
+        default 3900
+    config THIRD_PLACE_ADC_HYSTERESIS
+        int "Duration boundary hysteresis (raw ADC counts)"
+        range 0 100
+        default 20
+    config THIRD_PLACE_ADC_LOG
+        bool "Log raw/filtered ADC readings once per second for endpoint calibration"
+        default n
+endmenu

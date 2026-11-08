@@ -1,0 +1,8 @@
+{
+  "ssid": "YOUR_2_4_GHZ_WIFI",
+  "password": "REPLACE_LOCALLY",
+  "base_url": "http://192.168.1.100:8787",
+  "table_id": "REPLACE_WITH_REAL_DATABASE_TABLE_UUID",
+  "device_key": "REPLACE_WITH_AN_ALLOWLISTED_DEVICE_KEY",
+  "allow_http": true
+}
